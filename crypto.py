@@ -1,11 +1,11 @@
-import gdax, time, json, ast, requests
+import gdax, time, json, ast, requests, sys, csv
 import numpy as np
 from datetime import datetime
+import pandas as pd
 
-
-def cmc():
+def cmc(symbol):
+    # takes in symbol in quotes and returns the correct thing
     #pulling from coinmarketcap datatbase
-
 
     r = requests.get("https://api.coinmarketcap.com/v1/ticker/?limit=100")
 
@@ -14,22 +14,45 @@ def cmc():
 
 
     #prints #1 coin which is currently bitcoin
-    print(top100[0])
-    # print(top100)
-    # print(type(top100))
-    # print(d[0])
-    # btc_dict = d[0]
-    # bitcoin_price = btc_dict["price_usd"]
-    # print(bitcoin_price)
-    # price = float(bitcoin_price)
+    for i in range(len(top100)):
+        if top100[i]['symbol'] == symbol:
+            coin_index = i 
+    print(top100[coin_index])
 
 
-def historical():
+def historical(name):
+    filepath = "coins/" + name + "_price.csv"
+    df = pd.read_csv(filepath)
+    price_list = []
+    returns_list = []
+    for price in df["Close"]:
+        price_list.append(price)
+    for i in range(len(price_list) -1):
+        daily_return = price_list[i]/price_list[i+1] - 1 
+        returns_list.append(daily_return)
+    mean = np.mean(returns_list)
+    max = np.max(returns_list)
+    min = np.min(returns_list)
+    duration_years = len(price_list)/365
+    return mean, max, min, duration_years
+
+    data_list = []
+    # with open(filepath) as f:
+    #     reader = csv.reader(f)
+    #     header = next(reader)
+    #     for row in reader:
+    #         trip = self.read_single_trip(row)
+    #         data_list.append(trip)
+
+    # return data_list
+
+
 
     #trying to measure returns
 
 def corr():
     #finding correlations
+    pass
 
 
 def xcdata(pair):
