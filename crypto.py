@@ -3,6 +3,9 @@ import numpy as np
 from datetime import datetime
 import pandas as pd
 
+
+full_list = ["bitcoin", "bitcoin_cash", "bitconnect", "dash", "ethereum_classic", "ethereum", "iota", "litecoin", "monero", "nem", "neo", "numeraire", "omisego", "qtum", "ripple", "stratis", "waves"]
+
 def cmc(symbol):
     # takes in symbol in quotes and returns the correct thing
     #pulling from coinmarketcap datatbase
@@ -20,11 +23,15 @@ def cmc(symbol):
     print(top100[coin_index])
 
 
+# class 
+
 def historical(name):
     filepath = "coins/" + name + "_price.csv"
     df = pd.read_csv(filepath)
     price_list = []
     returns_list = []
+    recent_close = df["Close"][0]
+    ipo = df["Open"][len(df)-1]
     for price in df["Close"]:
         price_list.append(price)
     for i in range(len(price_list) -1):
@@ -34,9 +41,23 @@ def historical(name):
     max = np.max(returns_list)
     min = np.min(returns_list)
     duration_years = len(price_list)/365
-    return mean, max, min, duration_years
+    stand_dev = np.std(returns_list)
+    negative_returns = []
+    for i in returns_list:
+        if i < 0:
+            negative_returns.append(i)
+    neg_mean = np.mean(negative_returns)
+    sortino_sd = np.std(negative_returns)
+    total_return = recent_close/ipo
+    ann_return = total_return **(1/duration_years) -1
+    # sharpe = (ann_return - 0.0236)/stand_dev
+    # sortino = (ann_return - 0.0236)/sortino_sd
+    # return sharpe, sortino
+    return returns_list
 
-    data_list = []
+    # return mean, max, min, duration_years
+
+    # data_list = []
     # with open(filepath) as f:
     #     reader = csv.reader(f)
     #     header = next(reader)
@@ -50,9 +71,53 @@ def historical(name):
 
     #trying to measure returns
 
-def corr():
-    #finding correlations
-    pass
+def corr(name1, name2, duration_days=99999, start_date=0):
+    # takes two coins and returns correlations of the coins
+    a = historical(name1)
+    b = historical(name2)
+
+    if duration_days == 99999:
+        # means that they want the full length.
+        if len(a) < len(b):
+            b = b[:len(a)]
+        else: 
+            a = a[:len(b)]
+    else:
+        oldest_date = start_date + duration_days
+        a = a[start_date:oldest_date]
+        b = b[start_date:oldest_date]
+    x = np.array(a)
+    y = np.array(b)
+
+    r = np.corrcoef([x,y])
+    corr = r[1,0]
+    return corr
+
+
+def allcorr(namelist, duration_days=99999, start_date=0):
+    # takes in list of coins of interest
+    corr_dict = {}
+    for i in range(len(namelist)-1):
+        for j in range(i+1,len(namelist)):
+            one_corr = corr(namelist[i],namelist[j],duration_days, start_date)
+            corr_dict[namelist[i],namelist[j]] = one_corr
+    print(corr_dict)
+
+
+def dur_corr_log(name1, name, dur):
+    a = historical(name1)
+    b = historical(name2)
+    time = min([len(a), len(b)])
+    corr_log = []
+    for i in range(time - dur):
+        one_corr = corr(name1, name2, dur, i)
+        print(one_corr)
+        corr_log.append(one_corr)
+    mean = np.mean(corr_log)
+    max = np.max(corr_log)
+    minimum = np.min(corr_log)
+    stand_dev = np.std(corr_log)
+    return mean, max, minimum, stand_dev
 
 
 def xcdata(pair):
@@ -97,7 +162,8 @@ def xcdata(pair):
     return d
 
 
-
+def portfolio(coin):
+    pass
 
 def strat1(pair):
     output = xcdata(pair)
